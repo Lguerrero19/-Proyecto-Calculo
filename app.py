@@ -98,10 +98,42 @@ with col2:
     )
 
 # Botón para calcular
+def parse_limit(expr):
+    """
+    Convierte una cadena como 'pi', 'pi/2', '2*pi', '3.5', etc. a un número float.
+    Solo usa nombres y funciones permitidas (pi, e, sin, cos, etc.).
+    """
+    import math
+    import numpy as np
+
+    allowed = {
+        "pi": math.pi,
+        "π": math.pi,
+        "e": math.e,
+    }
+
+    # Por si quisieras usar algo más raro como sin(pi/2) en un límite
+    allowed.update({
+        k: getattr(math, k)
+        for k in dir(math)
+        if not k.startswith("_")
+    })
+    allowed.update({
+        k: getattr(np, k)
+        for k in dir(np)
+        if not k.startswith("_")
+    })
+
+    return float(eval(expr, {"__builtins__": {}}, allowed))
+
 if st.button("Calcular integral aproximada"):
+  if st.button("Calcular integral aproximada"):
     try:
+        # Convertir los límites de texto a número (aceptando pi, pi/2, etc.)
+        a = parse_limit(a_str)
+        b = parse_limit(b_str)
+
         f = build_function(func_str)
-        # Verificación rápida de la función
         _ = f(np.array([a, b]))
 
         if metodo == "Regla del trapecio":
