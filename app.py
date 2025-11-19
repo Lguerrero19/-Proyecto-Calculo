@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 from math import *
 
 
+# ------------------------------
+# Función para evaluar f(x)
+# ------------------------------
 def build_function(func_str):
     """
     Construye una función f(x) a partir de un string.
@@ -41,14 +44,16 @@ def build_function(func_str):
     return f
 
 
-
-
+# ------------------------------
+# Métodos de integración
+# ------------------------------
 def trapecio(f, a, b, n):
     x = np.linspace(a, b, n + 1)
     y = f(x)
     h = (b - a) / n
     I = h * (0.5 * y[0] + y[1:-1].sum() + 0.5 * y[-1])
     return I, x, y, h
+
 
 def simpson_tercio(f, a, b, n):
     if n % 2 != 0:
@@ -58,6 +63,39 @@ def simpson_tercio(f, a, b, n):
     h = (b - a) / n
     I = (h / 3) * (y[0] + y[-1] + 4 * y[1:-1:2].sum() + 2 * y[2:-2:2].sum())
     return I, x, y, h
+
+
+# ------------------------------
+# Parsear límites tipo "pi/2", "2*pi", etc.
+# ------------------------------
+def parse_limit(expr):
+    """
+    Convierte una cadena como 'pi', 'pi/2', '2*pi', '3.5', etc. a un número float.
+    Solo usa nombres y funciones permitidas (pi, e, sin, cos, etc.).
+    """
+    import math
+    import numpy as np
+
+    allowed = {
+        "pi": math.pi,
+        "π": math.pi,
+        "e": math.e,
+    }
+
+    # Por si quisieras usar algo como sin(pi/2) en un límite
+    allowed.update({
+        k: getattr(math, k)
+        for k in dir(math)
+        if not k.startswith("_")
+    })
+    allowed.update({
+        k: getattr(np, k)
+        for k in dir(np)
+        if not k.startswith("_")
+    })
+
+    return float(eval(expr, {"__builtins__": {}}, allowed))
+
 
 # ------------------------------
 # Interfaz Streamlit
@@ -84,9 +122,8 @@ with col1:
         ("Regla del trapecio", "Regla de Simpson 1/3")
     )
     func_str = st.text_input("Función f(x):", value="x**2")
-   a_str = st.text_input("Límite inferior a:", value="0")
-b_str = st.text_input("Límite superior b:", value="pi")
-
+    a_str = st.text_input("Límite inferior a:", value="0")
+    b_str = st.text_input("Límite superior b:", value="pi")
     n = st.number_input("Número de subintervalos n:", min_value=1, value=4, step=1)
 
 with col2:
@@ -94,47 +131,20 @@ with col2:
     mostrar_grafica = st.checkbox("Mostrar gráfica", value=True)
     st.info(
         "Puedes usar funciones como `sin(x)`, `cos(x)`, `exp(x)`, `log(x)`, etc.\n"
-        "Ejemplos: `x**2`, `sin(x)`, `exp(-x**2)`"
+        "Ejemplos: `x**2`, `sin(x)`, `exp(-x**2)`, `sin(x*pi)`"
     )
 
+# ------------------------------
 # Botón para calcular
-def parse_limit(expr):
-    """
-    Convierte una cadena como 'pi', 'pi/2', '2*pi', '3.5', etc. a un número float.
-    Solo usa nombres y funciones permitidas (pi, e, sin, cos, etc.).
-    """
-    import math
-    import numpy as np
-
-    allowed = {
-        "pi": math.pi,
-        "π": math.pi,
-        "e": math.e,
-    }
-
-    # Por si quisieras usar algo más raro como sin(pi/2) en un límite
-    allowed.update({
-        k: getattr(math, k)
-        for k in dir(math)
-        if not k.startswith("_")
-    })
-    allowed.update({
-        k: getattr(np, k)
-        for k in dir(np)
-        if not k.startswith("_")
-    })
-
-    return float(eval(expr, {"__builtins__": {}}, allowed))
-
+# ------------------------------
 if st.button("Calcular integral aproximada"):
-  if st.button("Calcular integral aproximada"):
     try:
         # Convertir los límites de texto a número (aceptando pi, pi/2, etc.)
         a = parse_limit(a_str)
         b = parse_limit(b_str)
 
         f = build_function(func_str)
-        _ = f(np.array([a, b]))
+        _ = f(np.array([a, b]))  # prueba rápida
 
         if metodo == "Regla del trapecio":
             I, x, y, h = trapecio(f, a, b, int(n))
@@ -148,7 +158,7 @@ if st.button("Calcular integral aproximada"):
         st.subheader("Resultado de la integral aproximada")
         st.write(
             f"Integral aproximada de `f(x) = {func_str}` en el intervalo "
-            f"[{a}, {b}] con n = {int(n)} subintervalos:"
+            f"[{a_str}, {b_str}] con n = {int(n)} subintervalos:"
         )
         st.success(f"**I ≈ {I:.6f}**")
 
@@ -222,7 +232,6 @@ if st.button("Calcular integral aproximada"):
                     f"I \\approx \\frac{{h}}{{3}} \\cdot S"
                     f" = \\frac{{{h}}}{{3}} \\cdot {S} \\approx {I}"
                 )
-
 
         # ---- Gráfica ----
         if mostrar_grafica:
