@@ -17,20 +17,19 @@ def build_function(func_str):
     import math
 
     allowed_names = {
-        # constantes útiles
         "pi": math.pi,
         "π": math.pi,
         "e": math.e,
     }
 
-    # Funciones y constantes de math (asin, atan, etc.)
+    # Funciones de math
     allowed_names.update({
         k: getattr(math, k)
         for k in dir(math)
         if not k.startswith("_")
     })
 
-    # Funciones de numpy: sin, cos, exp, log, etc. (versiones que aceptan arrays)
+    # Funciones de numpy (sobrescriben math.sin, math.cos, etc.)
     allowed_names.update({
         k: getattr(np, k)
         for k in dir(np)
@@ -38,14 +37,13 @@ def build_function(func_str):
     })
 
     def f(x):
-        # Evalúa usando solo los nombres permitidos + la variable x
         return eval(func_str, {"__builtins__": {}}, {**allowed_names, "x": x})
 
     return f
 
 
 # ------------------------------
-# Métodos de integración
+# Métodos numéricos
 # ------------------------------
 def trapecio(f, a, b, n):
     x = np.linspace(a, b, n + 1)
@@ -66,13 +64,9 @@ def simpson_tercio(f, a, b, n):
 
 
 # ------------------------------
-# Parsear límites tipo "pi/2", "2*pi", etc.
+# Parseador de límites tipo pi, pi/3, 2*pi, etc.
 # ------------------------------
 def parse_limit(expr):
-    """
-    Convierte una cadena como 'pi', 'pi/2', '2*pi', '3.5', etc. a un número float.
-    Solo usa nombres y funciones permitidas (pi, e, sin, cos, etc.).
-    """
     import math
     import numpy as np
 
@@ -82,7 +76,6 @@ def parse_limit(expr):
         "e": math.e,
     }
 
-    # Por si quisieras usar algo como sin(pi/2) en un límite
     allowed.update({
         k: getattr(math, k)
         for k in dir(math)
@@ -106,14 +99,15 @@ st.title("Aplicativo Web: Regla del Trapecio y Simpson 1/3")
 st.write(
     """
     Este aplicativo permite aproximar una integral definida usando:
-    - **Regla del trapecio**
+    - **Regla del Trapecio**
     - **Regla de Simpson 1/3**
 
-    Ingresa la función, los límites de integración y el número de subintervalos.
+    Puedes usar funciones como `sin(x)`, `cos(x)`, `exp(x)`,  
+    y límites con expresiones como `pi`, `2*pi`, `pi/3`, etc.
     """
 )
 
-# ---- Entradas del usuario ----
+# ---- Entradas ----
 col1, col2 = st.columns(2)
 
 with col1:
@@ -121,151 +115,133 @@ with col1:
         "Método de integración",
         ("Regla del trapecio", "Regla de Simpson 1/3")
     )
-    func_str = st.text_input("Función f(x):", value="x**2")
+    func_str = st.text_input("Función f(x):", value="sin(x)")
     a_str = st.text_input("Límite inferior a:", value="0")
     b_str = st.text_input("Límite superior b:", value="pi")
-    n = st.number_input("Número de subintervalos n:", min_value=1, value=4, step=1)
+    n = st.number_input("Número de subintervalos n (Simpson requiere par):",
+                        min_value=1, value=4, step=1)
 
 with col2:
     mostrar_paso_a_paso = st.checkbox("Mostrar paso a paso", value=True)
     mostrar_grafica = st.checkbox("Mostrar gráfica", value=True)
     st.info(
-        "Puedes usar funciones como `sin(x)`, `cos(x)`, `exp(x)`, `log(x)`, etc.\n"
-        "Ejemplos: `x**2`, `sin(x)`, `exp(-x**2)`, `sin(x*pi)`"
+        "Ejemplos válidos:\n"
+        "`sin(x)` | `cos(x)` | `exp(-x**2)` | `x**3 + sin(x)`\n"
+        "Límites: `0`, `pi`, `pi/2`, `2*pi`, etc."
     )
 
 # ------------------------------
-# Botón para calcular
+# Botón principal
 # ------------------------------
 if st.button("Calcular integral aproximada"):
     try:
-        # Convertir los límites de texto a número (aceptando pi, pi/2, etc.)
+        # Convertir límites escritos como texto
         a = parse_limit(a_str)
         b = parse_limit(b_str)
 
+        # Crear función evaluable
         f = build_function(func_str)
-        _ = f(np.array([a, b]))  # prueba rápida
+        _ = f(np.array([a, b]))  # prueba
 
+        # Calcular integral
         if metodo == "Regla del trapecio":
             I, x, y, h = trapecio(f, a, b, int(n))
         else:
             if int(n) % 2 != 0:
-                st.error("Para Simpson 1/3, el número de subintervalos n debe ser **par**.")
+                st.error("Simpson 1/3 requiere que n sea PAR.")
                 st.stop()
             I, x, y, h = simpson_tercio(f, a, b, int(n))
 
-        # ---- Resultado principal ----
-        st.subheader("Resultado de la integral aproximada")
-        st.write(
-            f"Integral aproximada de `f(x) = {func_str}` en el intervalo "
-            f"[{a_str}, {b_str}] con n = {int(n)} subintervalos:"
-        )
-        st.success(f"**I ≈ {I:.6f}**")
+        # Resultado
+        st.subheader("Resultado")
+        st.success(f"I ≈ {I:.6f}")
 
-        # ---- Paso a paso ----
+        # ------------------------------
+        # Paso a paso
+        # ------------------------------
         if mostrar_paso_a_paso:
             st.subheader("Paso a paso")
 
             st.markdown(
-                f"1. **Cálculo del ancho de subintervalo**  \n"
+                f"1. **Cálculo del ancho:**  \n"
                 f"h = (b - a) / n = ({b} - {a}) / {int(n)} = **{h}**"
             )
 
-            # Tabla con xi y f(xi)
-            st.markdown("2. **Puntos de evaluación y valores de la función**")
             datos = {
                 "i": list(range(len(x))),
                 "x_i": x,
                 "f(x_i)": y
             }
 
-            # Añadir coeficientes según el método
             coef = []
-            if metodo == "Regla del trapecio":
-                for i in range(len(x)):
-                    if i == 0 or i == len(x) - 1:
-                        coef.append(0.5)
-                    else:
-                        coef.append(1.0)
 
-                st.markdown("3. **Fórmula de la regla del trapecio**")
-                st.latex(
-                    r"I \approx h\left[\frac{f(x_0)}{2} + f(x_1) + \dots + f(x_{n-1}) + \frac{f(x_n)}{2}\right]"
-                )
+            if metodo == "Regla del trapecio":
+                st.markdown("2. **Coeficientes (Trapecio)**")
+                for i in range(len(x)):
+                    coef.append(0.5 if i == 0 or i == len(x)-1 else 1)
+
+                st.latex(r"I \approx h\left[\frac{f(x_0)}{2} + f(x_1) + \dots + f(x_{n-1}) + \frac{f(x_n)}{2}\right]")
 
             else:
-                # Simpson 1/3
+                st.markdown("2. **Coeficientes (Simpson 1/3)**")
                 for i in range(len(x)):
-                    if i == 0 or i == len(x) - 1:
+                    if i == 0 or i == len(x)-1:
                         coef.append(1)
                     elif i % 2 == 1:
                         coef.append(4)
                     else:
                         coef.append(2)
 
-                st.markdown("3. **Fórmula de Simpson 1/3**")
-                st.latex(
-                    r"I \approx \frac{h}{3}\left[f(x_0) + 4f(x_1) + 2f(x_2)"
-                    r" + \dots + 4f(x_{n-1}) + f(x_n)\right]"
-                )
+                st.latex(r"I \approx \frac{h}{3}\left[f(x_0) + 4f(x_1) + 2f(x_2)+ \dots + 4f(x_{n-1}) + f(x_n)\right]")
 
             datos["Coeficiente"] = coef
             datos["Coef * f(x_i)"] = np.array(coef) * y
-
             st.dataframe(datos)
 
-            # Paso final: suma y resultado
             S = datos["Coef * f(x_i)"].sum()
 
-            st.markdown("4. **Cálculo numérico de la suma ponderada**")
-            st.latex(r"S = \sum_{i=0}^{n} c_i\,f(x_i)")
-            st.latex(f"S \\approx {S}")
+            st.markdown("3. **Suma ponderada:**")
+            st.latex(f"S = {S}")
 
             if metodo == "Regla del trapecio":
-                st.markdown("5. **Resultado final (Trapecio)**")
-                st.latex(
-                    f"I \\approx h \\cdot S = {h} \\cdot {S} \\approx {I}"
-                )
+                st.markdown("4. **Resultado final:**")
+                st.latex(f"I = h · S = {h}·{S} = {I}")
             else:
-                st.markdown("5. **Resultado final (Simpson 1/3)**")
-                st.latex(
-                    f"I \\approx \\frac{{h}}{{3}} \\cdot S"
-                    f" = \\frac{{{h}}}{{3}} \\cdot {S} \\approx {I}"
-                )
+                st.markdown("4. **Resultado final:**")
+                st.latex(f"I = (h/3) · S = {h}/3 · {S} = {I}")
 
-        # ---- Gráfica ----
+        # ------------------------------
+        # Gráfica mejorada
+        # ------------------------------
         if mostrar_grafica:
             st.subheader("Gráfica de la función y la aproximación")
 
             fig, ax = plt.subplots()
 
+            # Curva real
             xs = np.linspace(a, b, 400)
             ys = f(xs)
-            ax.plot(xs, ys, label="f(x) (función real)")
+            ax.plot(xs, ys, label="f(x) (función real)", linewidth=2)
 
-            ax.plot(x, y, "o--", label="Aproximación por tramos")
+            # Aproximación por tramos
+            ax.plot(x, y, "o--", label="Aproximación por tramos", color="orange")
 
+            # Líneas verticales
             for xi in x:
-                ax.vlines(xi, 0, f(xi), linestyles="dashed", linewidth=0.8)
+                ax.vlines(xi, 0, f(xi), linestyle="dashed", linewidth=0.7)
 
-         
-            if metodo == "Regla del trapecio":
-           
-                for i in range(len(x) - 1):
-                    xx = [x[i], x[i+1]]
-                    yy = [y[i], y[i+1]]
-                    ax.fill_between(xx, yy, [0, 0], alpha=0.2)
-            else:
-                       for i in range(len(x) - 1):
-                    xx = [x[i], x[i+1]]
-                    yy = [y[i], y[i+1]]
-                    ax.fill_between(xx, yy, [0, 0], alpha=0.2)
+            # Sombreado del área
+            for i in range(len(x) - 1):
+                xx = [x[i], x[i+1]]
+                yy = [y[i], y[i+1]]
+                ax.fill_between(xx, yy, [0, 0], alpha=0.2, color="orange")
 
             ax.set_xlabel("x")
             ax.set_ylabel("f(x)")
-            ax.set_title("Integración numérica: función y cortes")
             ax.grid(True)
             ax.legend()
 
             st.pyplot(fig)
 
+    except Exception as e:
+        st.error(f"Ocurrió un error: {e}")
