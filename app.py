@@ -210,28 +210,20 @@ if st.button("Calcular integral aproximada"):
                 st.markdown("4. **Resultado final:**")
                 st.latex(f"I = (h/3) · S = {h}/3 · {S} = {I}")
 
-        # ------------------------------
-        # Gráfica mejorada
-        # ------------------------------
         if mostrar_grafica:
             st.subheader("Gráfica de la función y la aproximación")
 
             fig, ax = plt.subplots()
-
-            # Curva real
             xs = np.linspace(a, b, 400)
             ys = f(xs)
             ax.plot(xs, ys, label="f(x) (función real)", linewidth=2)
 
-            # Aproximación por tramos
             ax.plot(x, y, "o--", label="Aproximación por tramos", color="orange")
 
-            # Líneas verticales
             for xi in x:
                 ax.vlines(xi, 0, f(xi), linestyle="dashed", linewidth=0.7)
 
-            # Sombreado del área
-            for i in range(len(x) - 1):
+                    for i in range(len(x) - 1):
                 xx = [x[i], x[i+1]]
                 yy = [y[i], y[i+1]]
                 ax.fill_between(xx, yy, [0, 0], alpha=0.2, color="orange")
