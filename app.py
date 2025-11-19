@@ -235,21 +235,37 @@ if st.button("Calcular integral aproximada"):
 
         # ---- Gráfica ----
         if mostrar_grafica:
-            st.subheader("Gráfica de la función y puntos de integración")
+            st.subheader("Gráfica de la función y la aproximación")
 
             fig, ax = plt.subplots()
+
             xs = np.linspace(a, b, 400)
             ys = f(xs)
-            ax.plot(xs, ys, label="f(x)")
-            ax.scatter(x, y, label="Puntos de integración")
+            ax.plot(xs, ys, label="f(x) (función real)")
+
+            ax.plot(x, y, "o--", label="Aproximación por tramos")
+
+            for xi in x:
+                ax.vlines(xi, 0, f(xi), linestyles="dashed", linewidth=0.8)
+
+         
+            if metodo == "Regla del trapecio":
+           
+                for i in range(len(x) - 1):
+                    xx = [x[i], x[i+1]]
+                    yy = [y[i], y[i+1]]
+                    ax.fill_between(xx, yy, [0, 0], alpha=0.2)
+            else:
+                       for i in range(len(x) - 1):
+                    xx = [x[i], x[i+1]]
+                    yy = [y[i], y[i+1]]
+                    ax.fill_between(xx, yy, [0, 0], alpha=0.2)
 
             ax.set_xlabel("x")
             ax.set_ylabel("f(x)")
-            ax.set_title("Integración numérica")
+            ax.set_title("Integración numérica: función y cortes")
             ax.grid(True)
             ax.legend()
 
             st.pyplot(fig)
 
-    except Exception as e:
-        st.error(f"Hubo un error al evaluar la función o el método: {e}")
