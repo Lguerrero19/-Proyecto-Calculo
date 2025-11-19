@@ -3,29 +3,31 @@ import numpy as np
 import matplotlib.pyplot as plt
 from math import *
 
-# ------------------------------
-# Función para evaluar f(x) dada como texto
-# ------------------------------
+
 def build_function(func_str):
     """
     Construye una función f(x) a partir de un string.
-    Permite usar funciones de numpy (para trabajar con arrays)
+    Permite usar funciones de numpy (para trabajar con arreglos)
     y de math (para constantes como pi, e, etc.).
     """
     import numpy as np
     import math
 
-    allowed_names = {}
+    allowed_names = {
+        # constantes útiles
+        "pi": math.pi,
+        "π": math.pi,
+        "e": math.e,
+    }
 
-    # Primero funciones y constantes de math (pi, e, etc.)
+    # Funciones y constantes de math (asin, atan, etc.)
     allowed_names.update({
         k: getattr(math, k)
         for k in dir(math)
         if not k.startswith("_")
     })
 
-    # Después funciones de numpy, para que sin, cos, exp, etc.
-    # sean las versiones que trabajan bien con arrays.
+    # Funciones de numpy: sin, cos, exp, log, etc. (versiones que aceptan arrays)
     allowed_names.update({
         k: getattr(np, k)
         for k in dir(np)
@@ -33,15 +35,14 @@ def build_function(func_str):
     })
 
     def f(x):
-        # Evalúa usando solo nombres permitidos + x
+        # Evalúa usando solo los nombres permitidos + la variable x
         return eval(func_str, {"__builtins__": {}}, {**allowed_names, "x": x})
 
     return f
 
 
-# ------------------------------
-# Métodos de integración
-# ------------------------------
+
+
 def trapecio(f, a, b, n):
     x = np.linspace(a, b, n + 1)
     y = f(x)
@@ -123,12 +124,12 @@ if st.button("Calcular integral aproximada"):
             st.subheader("Paso a paso")
 
             st.markdown(
-                f"- Ancho de cada subintervalo: "
-                f"`h = (b - a) / n = ({b} - {a}) / {int(n)} = {h}`"
+                f"1. **Cálculo del ancho de subintervalo**  \n"
+                f"h = (b - a) / n = ({b} - {a}) / {int(n)} = **{h}**"
             )
 
             # Tabla con xi y f(xi)
-            st.markdown("**Puntos de evaluación:**")
+            st.markdown("2. **Puntos de evaluación y valores de la función**")
             datos = {
                 "i": list(range(len(x))),
                 "x_i": x,
@@ -143,10 +144,12 @@ if st.button("Calcular integral aproximada"):
                         coef.append(0.5)
                     else:
                         coef.append(1.0)
+
+                st.markdown("3. **Fórmula de la regla del trapecio**")
                 st.latex(
-                    r"\int_a^b f(x)\,dx \approx h\left[\frac{f(x_0)}{2} + f(x_1) + "
-                    r"\dots + f(x_{n-1}) + \frac{f(x_n)}{2}\right]"
+                    r"I \approx h\left[\frac{f(x_0)}{2} + f(x_1) + \dots + f(x_{n-1}) + \frac{f(x_n)}{2}\right]"
                 )
+
             else:
                 # Simpson 1/3
                 for i in range(len(x)):
@@ -156,9 +159,11 @@ if st.button("Calcular integral aproximada"):
                         coef.append(4)
                     else:
                         coef.append(2)
+
+                st.markdown("3. **Fórmula de Simpson 1/3**")
                 st.latex(
-                    r"""\int_a^b f(x)\,dx \approx \frac{h}{3}\left[f(x_0) + 4f(x_1) + 2f(x_2)
-                    + \dots + 4f(x_{n-1}) + f(x_n)\right]"""
+                    r"I \approx \frac{h}{3}\left[f(x_0) + 4f(x_1) + 2f(x_2)"
+                    r" + \dots + 4f(x_{n-1}) + f(x_n)\right]"
                 )
 
             datos["Coeficiente"] = coef
@@ -166,32 +171,25 @@ if st.button("Calcular integral aproximada"):
 
             st.dataframe(datos)
 
-            if metodo == "Regla del trapecio":
-                st.markdown(
-                    f"""
-                    **Cálculo final (Trapecio):**
+            # Paso final: suma y resultado
+            S = datos["Coef * f(x_i)"].sum()
 
-                    \\[
-                    I \\approx h \\left( \\tfrac{{1}}{{2}} f(x_0) +
-                    f(x_1) + \\dots + f(x_{{n-1}}) + \\tfrac{{1}}{{2}} f(x_n) \\right)
-                    \\]
-                    """
+            st.markdown("4. **Cálculo numérico de la suma ponderada**")
+            st.latex(r"S = \sum_{i=0}^{n} c_i\,f(x_i)")
+            st.latex(f"S \\approx {S}")
+
+            if metodo == "Regla del trapecio":
+                st.markdown("5. **Resultado final (Trapecio)**")
+                st.latex(
+                    f"I \\approx h \\cdot S = {h} \\cdot {S} \\approx {I}"
                 )
             else:
-                st.markdown(
-                    f"""
-                    **Cálculo final (Simpson 1/3):**
-
-                    \\[
-                    I \\approx \\frac{{h}}{{3}} \\left( f(x_0) + 4f(x_1) + 2f(x_2)
-                    + \\dots + 4f(x_{{n-1}}) + f(x_n) \\right)
-                    \\]
-
-                    \\[
-                    I \\approx \\frac{{{h}}}{{3}} \\times \\left( {datos["Coef * f(x_i)"].sum()} \\right)
-                    \\]
-                    """
+                st.markdown("5. **Resultado final (Simpson 1/3)**")
+                st.latex(
+                    f"I \\approx \\frac{{h}}{{3}} \\cdot S"
+                    f" = \\frac{{{h}}}{{3}} \\cdot {S} \\approx {I}"
                 )
+
 
         # ---- Gráfica ----
         if mostrar_grafica:
