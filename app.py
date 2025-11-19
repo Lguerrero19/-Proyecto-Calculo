@@ -84,8 +84,9 @@ with col1:
         ("Regla del trapecio", "Regla de Simpson 1/3")
     )
     func_str = st.text_input("Función f(x):", value="x**2")
-    a = st.number_input("Límite inferior a:", value=0.0)
-    b = st.number_input("Límite superior b:", value=2.0)
+   a_str = st.text_input("Límite inferior a:", value="0")
+b_str = st.text_input("Límite superior b:", value="pi")
+
     n = st.number_input("Número de subintervalos n:", min_value=1, value=4, step=1)
 
 with col2:
