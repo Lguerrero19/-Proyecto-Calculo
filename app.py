@@ -9,22 +9,35 @@ from math import *
 def build_function(func_str):
     """
     Construye una función f(x) a partir de un string.
-    Permite usar funciones de numpy y de math.
+    Permite usar funciones de numpy (para trabajar con arrays)
+    y de math (para constantes como pi, e, etc.).
     """
+    import numpy as np
+    import math
+
     allowed_names = {}
 
-    # Importar funciones de numpy
-    import numpy as np
-    allowed_names.update({k: getattr(np, k) for k in dir(np) if not k.startswith("_")})
+    # Primero funciones y constantes de math (pi, e, etc.)
+    allowed_names.update({
+        k: getattr(math, k)
+        for k in dir(math)
+        if not k.startswith("_")
+    })
 
-    # Importar funciones de math
-    import math
-    allowed_names.update({k: getattr(math, k) for k in dir(math) if not k.startswith("_")})
+    # Después funciones de numpy, para que sin, cos, exp, etc.
+    # sean las versiones que trabajan bien con arrays.
+    allowed_names.update({
+        k: getattr(np, k)
+        for k in dir(np)
+        if not k.startswith("_")
+    })
 
     def f(x):
+        # Evalúa usando solo nombres permitidos + x
         return eval(func_str, {"__builtins__": {}}, {**allowed_names, "x": x})
 
     return f
+
 
 # ------------------------------
 # Métodos de integración
