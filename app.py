@@ -219,14 +219,14 @@ if st.button("Calcular integral aproximada"):
             ax.plot(xs, ys, label="f(x) (función real)", linewidth=2)
 
             ax.plot(x, y, "o--", label="Aproximación por tramos", color="orange")
+for xi in x:
+    ax.vlines(xi, 0, f(xi), linestyle="dashed", linewidth=0.7)
 
-            for xi in x:
-                ax.vlines(xi, 0, f(xi), linestyle="dashed", linewidth=0.7)
+for i in range(len(x)-1):
+    xx = [x[i], x[i+1]]
+    yy = [y[i], y[i+1]]
+    ax.fill_between(xx, yy, [0, 0], alpha=0.2, color="orange")
 
-                    for i in range(len(x)- 1):
-                xx = [x[i], x[i+1]]
-                yy = [y[i], y[i+1]]
-                ax.fill_between(xx, yy, [0, 0], alpha=0.2, color="orange")
 
             ax.set_xlabel("x")
             ax.set_ylabel("f(x)")
