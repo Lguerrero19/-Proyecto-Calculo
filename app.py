@@ -223,7 +223,7 @@ if st.button("Calcular integral aproximada"):
             for xi in x:
                 ax.vlines(xi, 0, f(xi), linestyle="dashed", linewidth=0.7)
 
-                    for i in range(len(x) - 1):
+                    for i in range(len(x)- 1):
                 xx = [x[i], x[i+1]]
                 yy = [y[i], y[i+1]]
                 ax.fill_between(xx, yy, [0, 0], alpha=0.2, color="orange")
